@@ -6,12 +6,21 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/icon"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@drawable/icon"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:targetApi="31">
+        <activity
+            android:name=".GroupSurvey"
+            android:exported="false" />
+        <activity
+            android:name=".SurveyType"
+            android:exported="false" />
+        <activity
+            android:name=".SurveyDetails"
+            android:exported="false" />
         <activity
             android:name=".DisplaySurvey"
             android:exported="false" />

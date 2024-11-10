@@ -9,17 +9,26 @@
     tools:context=".DisplaySurvey"
     android:padding="16dp">
 
+    <TextView
+        android:id="@+id/displayDataTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Surveys"
+        android:gravity="center"
+        android:textSize="24sp"/>
+
+    <TextView
+        android:id="@+id/displayDataTextViewSelect"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="(Select one to see details)"
+        android:gravity="center"
+        android:textSize="18sp"/>
+
     <ListView
         android:id="@+id/surveyListView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dp" />
-
-    <TextView
-        android:id="@+id/displayDataTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Select a survey to view details"
-        android:textSize="18sp"/>
 
 </LinearLayout>

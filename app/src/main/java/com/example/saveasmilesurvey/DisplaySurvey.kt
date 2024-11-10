@@ -1,5 +1,6 @@
 package com.example.saveasmilesurvey
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.ListView
@@ -8,7 +9,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import org.json.JSONObject
 import java.io.File
 
 class DisplaySurvey : AppCompatActivity() {
@@ -22,10 +22,12 @@ class DisplaySurvey : AppCompatActivity() {
             insets
         }
 
-        val surveyFiles = filesDir.listFiles { _, name -> name.startsWith("survey_data_") }
+        val surveyFiles = filesDir.listFiles { _, name ->
+            name.startsWith("survey_data_") || name.startsWith("group_survey_")
+        }
         val fileNames = surveyFiles?.map { it.name } ?: emptyList()
         val surveyListView = findViewById<ListView>(R.id.surveyListView)
-        val displayDataTextView = findViewById<TextView>(R.id.displayDataTextView)
+        val displayDataTextViewSelect = findViewById<TextView>(R.id.displayDataTextViewSelect)
 
         if (fileNames.isNotEmpty()) {
             val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, fileNames)
@@ -34,11 +36,14 @@ class DisplaySurvey : AppCompatActivity() {
             surveyListView.setOnItemClickListener { _, _, position, _ ->
                 val selectedFile = File(filesDir, fileNames[position])
                 val jsonData = selectedFile.readText()
-                val responses = JSONObject(jsonData)
-                displayDataTextView.text = responses.toString(4)
+
+                // Start SurveyDetailActivity and pass the JSON data
+                val intent = Intent(this, SurveyDetails::class.java)
+                intent.putExtra("surveyData", jsonData)
+                startActivity(intent)
             }
         } else {
-            displayDataTextView.text = "No previous survey data found."
+            displayDataTextViewSelect.text = "No previous survey data found."
         }
     }
 }

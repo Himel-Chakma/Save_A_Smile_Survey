@@ -8,27 +8,28 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
-class ActivityHome : AppCompatActivity() {
+class SurveyType : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_home)
+        setContentView(R.layout.activity_survey_type)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
-        val startSurveyButton = findViewById<Button>(R.id.startSurveyButton)
-        val displayDataButton = findViewById<Button>(R.id.displayDataButton)
+        val individualSurveyButton = findViewById<Button>(R.id.individualSurveyButton)
+        val groupSurveyButton = findViewById<Button>(R.id.groupSurveyButton)
 
-        startSurveyButton.setOnClickListener {
-            val intent = Intent(this, SurveyType::class.java)
+        individualSurveyButton.setOnClickListener {
+            val intent = Intent(this, ActivitySurvey::class.java)
             startActivity(intent)
         }
 
-        displayDataButton.setOnClickListener {
-            startActivity(Intent(this, DisplaySurvey::class.java))
+        groupSurveyButton.setOnClickListener {
+            val intent = Intent(this, GroupSurvey::class.java)
+            startActivity(intent)
         }
     }
 }

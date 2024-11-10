@@ -1,21 +1,21 @@
 package com.example.saveasmilesurvey
 
 import android.os.Bundle
-import android.text.format.DateFormat
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.Button
-import android.widget.RadioButton
-import android.widget.RadioGroup
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isVisible
 import org.json.JSONObject
 import java.io.File
-import java.util.Date
 
-class ActivitySurvey : AppCompatActivity() {
+class GroupSurvey : AppCompatActivity() {
     private val questions = listOf(
         "তুমি কী ধরণের মাসিক স্বাস্থ্যবিধি দ্রব্য ব্যবহার করে থাকো? (What menstrual hygiene products do you use?)",
         "হেভি ফ্লো এর সময় কতক্ষণ পরপর প্যাড পরিবর্তন করে থাকো? (How often do you change your menstrual hygiene product on heavy flow days?)",
@@ -53,105 +53,137 @@ class ActivitySurvey : AppCompatActivity() {
         listOf("অনেক স্বাচ্ছন্দ বোধ করি (Very Comfortable)", "মোটামুটি স্বাচ্ছন্দ বোধ করি (Somewhat Comfortable)", "স্বাচ্ছন্দ বোধ করি না (Not Comfortable)", "শুধু বন্ধুবান্ধবদের সাথে আলোচনায় স্বাচ্ছন্দ বোধ করি (Only comfortable with friends)") // for Question 15
     )
 
-
     private var currentQuestionIndex = 0
     private val responses = JSONObject()
-
-    // Declare views here without initializing them
-    private lateinit var questionNumberText: TextView
-    private lateinit var questionText: TextView
-    private lateinit var optionGroup: RadioGroup
     private lateinit var nextButton: Button
-    private lateinit var option1: RadioButton
-    private lateinit var option2: RadioButton
-    private lateinit var option3: RadioButton
-    private lateinit var option4: RadioButton
-    private lateinit var option5: RadioButton
-    private lateinit var option6: RadioButton
-    private lateinit var option7: RadioButton
+    private lateinit var submitButton: Button
+    private lateinit var totalStudentsEditText: EditText
+    private lateinit var groupSurveyLayout: LinearLayout
+    private val optionEditTexts = mutableListOf<EditText>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_survey)
-
-        // Initialize views here after setContentView
-        questionNumberText = findViewById(R.id.questionNumberText)
-        questionText = findViewById(R.id.questionText)
-        optionGroup = findViewById(R.id.optionGroup)
-        nextButton = findViewById(R.id.nextButton)
-        option1 = findViewById(R.id.option1)
-        option2 = findViewById(R.id.option2)
-        option3 = findViewById(R.id.option3)
-        option4 = findViewById(R.id.option4)
-        option5 = findViewById(R.id.option5)
-        option6 = findViewById(R.id.option6)
-        option7 = findViewById(R.id.option7)
-
-        // Set up edge-to-edge mode (optional)
+        enableEdgeToEdge()
+        setContentView(R.layout.activity_group_survey)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
+        totalStudentsEditText = findViewById(R.id.totalStudentsEditText)
+        groupSurveyLayout = findViewById(R.id.groupSurveyLayout)
+
+        nextButton = Button(this).apply { text = "Next" }
+        submitButton = Button(this).apply { text = "Submit" }
+
+        totalStudentsEditText.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) = validateInputs()
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
+
         loadQuestion()
 
         nextButton.setOnClickListener {
-            val selectedOptionId = optionGroup.checkedRadioButtonId
-            if (selectedOptionId != -1) {
-                val selectedOption = findViewById<RadioButton>(selectedOptionId).text.toString()
-                responses.put(questions[currentQuestionIndex], selectedOption)
+            saveCurrentQuestionResponses()
+            currentQuestionIndex++
+            loadQuestion()
+        }
 
-                if (currentQuestionIndex < questions.size - 1) {
-                    currentQuestionIndex++
-                    loadQuestion()
-                } else {
-                    saveResponses()
-                    finish() // End survey
-                }
-            }
+        submitButton.setOnClickListener {
+            saveCurrentQuestionResponses()
+            saveSurveyResponses()
+            Toast.makeText(this, "Survey submitted successfully!", Toast.LENGTH_SHORT).show()
+            finish() // End survey
         }
     }
 
     private fun loadQuestion() {
-        questionNumberText.text = "Question: ${currentQuestionIndex + 1}/${questions.size}"
-        questionText.text = questions[currentQuestionIndex]
-        val currentOptions = options[currentQuestionIndex]
+        val questionText = findViewById<TextView>(R.id.questionText)
 
-        option1.text = currentOptions.getOrNull(0)
-        option2.text = currentOptions.getOrNull(1)
-        option3.text = currentOptions.getOrNull(2)
-        option4.text = currentOptions.getOrNull(3)
-        option5.text = currentOptions.getOrNull(4)
-        option6.text = currentOptions.getOrNull(5)
-        option7.text = currentOptions.getOrNull(6)
+        // Set the question text
+        questionText.text = "Q${currentQuestionIndex + 1}: ${questions[currentQuestionIndex]}"
 
-        option1.isVisible = option1.text.isNotEmpty()
-        option2.isVisible = option2.text.isNotEmpty()
-        option3.isVisible = option3.text.isNotEmpty()
-        option4.isVisible = option4.text.isNotEmpty()
-        option5.isVisible = option5.text.isNotEmpty()
-        option6.isVisible = option6.text.isNotEmpty()
-        option7.isVisible = option7.text.isNotEmpty()
+        // Remove dynamically added views (options and buttons)
+        groupSurveyLayout.removeAllViews()
+        optionEditTexts.clear()
 
-        optionGroup.clearCheck()
+        // Add total students field and question text back to layout
+        groupSurveyLayout.addView(totalStudentsEditText)
+        groupSurveyLayout.addView(questionText)
 
-        if (currentQuestionIndex == questions.size - 1) {
-            nextButton.text = "Submit"
-        } else {
-            nextButton.text = "Next"
+        // Add options with EditText fields for each option
+        options[currentQuestionIndex].forEach { optionText ->
+            val optionLabel = TextView(this).apply {
+                text = optionText
+                textSize = 16f
+                setPadding(0, 8, 0, 8)
+            }
+
+            val optionEditText = EditText(this).apply {
+                hint = "Number of students"
+                inputType = android.text.InputType.TYPE_CLASS_NUMBER
+                tag = optionText
+                setText("0")
+
+                // Add TextWatcher to each option EditText
+                addTextChangedListener(object : TextWatcher {
+                    override fun afterTextChanged(s: Editable?) = validateInputs()
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                })
+            }
+
+            optionEditTexts.add(optionEditText)
+            groupSurveyLayout.addView(optionLabel)
+            groupSurveyLayout.addView(optionEditText)
         }
+
+        // Add the appropriate button at the bottom
+        if (currentQuestionIndex == questions.size - 1) {
+            groupSurveyLayout.addView(submitButton)
+        } else {
+            groupSurveyLayout.addView(nextButton)
+        }
+
+        // Initial validation to set button state
+        validateInputs()
     }
 
-    private fun saveResponses() {
-        // Generate a unique filename based on the date and time
-        val timestamp = DateFormat.format("yyyyMMdd_hhmmss", Date()).toString()
-        val fileName = "survey_data_$timestamp.json"
+    private fun validateInputs() {
+        val totalStudents = totalStudentsEditText.text.toString().toIntOrNull() ?: 0
+
+        // Check if any option field is empty
+        val allFieldsFilled = optionEditTexts.all { it.text.toString().isNotEmpty() }
+
+        // Calculate the sum of all option values
+        val optionsSum = optionEditTexts.sumOf { it.text.toString().toIntOrNull() ?: 0 }
+
+        // Enable Next/Submit button only if all fields are filled and the sum matches the total students
+        val isInputValid = allFieldsFilled && optionsSum == totalStudents
+        nextButton.isEnabled = isInputValid
+        submitButton.isEnabled = isInputValid
+    }
+
+    private fun saveCurrentQuestionResponses() {
+        val responsesForQuestion = JSONObject()
+
+        options[currentQuestionIndex].forEachIndexed { index, optionText ->
+            val response = optionEditTexts[index].text.toString()
+            responsesForQuestion.put(optionText, response)
+        }
+
+        responses.put(questions[currentQuestionIndex], responsesForQuestion)
+    }
+
+    private fun saveSurveyResponses() {
+        val totalStudents = findViewById<EditText>(R.id.totalStudentsEditText).text.toString()
+        responses.put("Total Students", totalStudents)
+
+        // Save responses as JSON
+        val fileName = "group_survey_${System.currentTimeMillis()}.json"
         val file = File(filesDir, fileName)
-
-        // Save the responses as JSON
         file.writeText(responses.toString())
-
-        Toast.makeText(this, "Survey Saved successfully!", Toast.LENGTH_SHORT).show()
     }
 }
